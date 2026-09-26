@@ -48,8 +48,10 @@ const Signup = () => {
       const data = await response.json();
 
       if (response.ok) {
+        const user = data.user;
         localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("user", JSON.stringify(data));
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("userData", JSON.stringify(user));
         toast.success("Account created successfully!");
         navigate("/dashboard");
       } else {

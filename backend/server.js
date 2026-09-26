@@ -4,18 +4,18 @@ import dotenv from "dotenv";
 import twilio from "twilio";
 import path from "path";
 import { fileURLToPath } from "url";
-import connectDB from "./db.js";
+import connectDB from "../config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import Alert from "./models/Alert.js";
+import { asyncRoute } from "./routes/authRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, "../.env") });
+dotenv.config({ path: path.join(__dirname, "../.env") }); // Load Twilio credentials
+dotenv.config({ path: path.join(__dirname, ".env"), override: true }); // Load MONGODB_URI
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-// Connect to MongoDB
-connectDB();
 
 // API Routes
 app.use("/api/auth", authRoutes);
@@ -38,7 +38,10 @@ try {
 
 app.post("/api/send-sos", async (req, res) => {
   try {
-    const { name, location, contacts } = req.body;
+    const { name, location = "Unknown", contacts = [], userId } = req.body;
+    if (typeof name !== "string" || !name.trim() || !Array.isArray(contacts) || contacts.some((contact) => typeof contact !== "string")) {
+      return res.status(400).json({ success: false, message: "A name and valid contacts list are required" });
+    }
 
     // Example message
     const messageBody = `🚨 SOS Alert! ${name} may be in danger.
@@ -47,7 +50,8 @@ Please contact immediately!`;
 
     if (!client) {
       console.warn("Simulating SOS success because Twilio client is not initialized");
-      return res.json({ success: true, results: [{ sid: "simulated_SM12345" }] });
+      const alert = await Alert.create({ name: name.trim(), location, contacts, status: "simulated", user: userId || null });
+      return res.json({ success: true, alertId: alert._id, status: alert.status, results: [] });
     }
 
     // Send message to all emergency contacts
@@ -61,12 +65,28 @@ Please contact immediately!`;
       )
     );
 
-    res.json({ success: true, results });
+    const alert = await Alert.create({ name: name.trim(), location, contacts, status: "sent", user: userId || null, providerMessageIds: results.map(({ sid }) => sid) });
+    res.json({ success: true, alertId: alert._id, status: alert.status, results: results.map(({ sid, status }) => ({ sid, status })) });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("SOS request failed:", err.message);
+    res.status(500).json({ success: false, message: "Unable to process SOS request" });
   }
 });
 
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
+app.get("/api/alerts", asyncRoute(async (req, res) => {
+  const { userId } = req.query;
+  const alerts = await Alert.find(userId ? { user: userId } : {}).sort({ createdAt: -1 }).limit(100).lean();
+  res.json({ success: true, alerts });
+}));
+
+app.use((error, req, res, next) => {
+  if (error?.code === 11000) return res.status(409).json({ success: false, message: "An account with that email or mobile already exists" });
+  if (error?.name === "ValidationError") return res.status(400).json({ success: false, message: error.message });
+  console.error("API error:", error?.message || "Unknown error");
+  return res.status(500).json({ success: false, message: "Internal server error" });
+});
+
+const PORT = process.env.PORT || 5000;
+connectDB()
+  .then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
+  .catch(() => process.exit(1));

@@ -12,6 +12,9 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [silentMode, setSilentMode] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [alerts, setAlerts] = useState<Array<{ _id: string; name: string; status: string; createdAt: string }>>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
@@ -24,11 +27,15 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    const userData = localStorage.getItem("userData");
+    const userData = localStorage.getItem("user") || localStorage.getItem("userData");
     const userPhoto = localStorage.getItem("userPhoto");
-    if (userData) {
-      setFormData(JSON.parse(userData));
-    }
+    const user = userData ? JSON.parse(userData) : null;
+    if (user) fetch(`/api/auth/${user._id}`)
+      .then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.message); return data; })
+      .then((data) => { setFormData(data.user); setAlerts(data.alerts || []); localStorage.setItem("user", JSON.stringify({ _id: data.user._id, name: data.user.name, email: data.user.email, mobile: data.user.mobile })); })
+      .catch((error) => toast.error(error.message || "Unable to load profile"))
+      .finally(() => setIsLoading(false));
+    else setIsLoading(false);
     if (userPhoto) {
       setPhotoPreview(userPhoto);
     }
@@ -47,21 +54,27 @@ const Profile = () => {
     }
   };
 
-  const handleSave = () => {
-    localStorage.setItem("userData", JSON.stringify(formData));
-    setIsEditing(false);
-    toast.success("Profile updated successfully!");
+  const handleSave = async () => {
+    const storedUser = localStorage.getItem("user");
+    const userId = storedUser ? JSON.parse(storedUser)._id : null;
+    if (!userId) return toast.error("Please sign in again to update your profile");
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/auth/${userId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Profile update failed");
+      setFormData(data.user);
+      localStorage.setItem("userData", JSON.stringify(data.user));
+      localStorage.setItem("user", JSON.stringify({ _id: data.user._id, name: data.user.name, email: data.user.email, mobile: data.user.mobile }));
+      setIsEditing(false);
+      toast.success("Profile updated successfully!");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Profile update failed"); }
+    finally { setIsSaving(false); }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const pastAlerts = [
-    { id: 1, type: "SOS Alert", time: "2 days ago", status: "Resolved" },
-    { id: 2, type: "Danger Zone", time: "5 days ago", status: "Acknowledged" },
-    { id: 3, type: "Emergency Call", time: "1 week ago", status: "Completed" },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,7 +101,7 @@ const Profile = () => {
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button onClick={handleSave}>Save Changes</Button>
+                    <Button onClick={handleSave} disabled={isSaving}>{isSaving ? "Saving…" : "Save Changes"}</Button>
                     <Button onClick={() => setIsEditing(false)} variant="outline">
                       Cancel
                     </Button>
@@ -96,6 +109,7 @@ const Profile = () => {
                 )}
               </CardHeader>
               <CardContent className="space-y-6">
+                {isLoading && <p className="text-sm text-muted-foreground">Loading profile…</p>}
                 {/* Profile Photo */}
                 <div className="flex items-center gap-6">
                   <div className="relative">
@@ -235,18 +249,19 @@ const Profile = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {pastAlerts.map((alert) => (
+                  {alerts.map((alert) => (
                     <div
-                      key={alert.id}
+                      key={alert._id}
                       className="flex items-center justify-between p-3 rounded-lg bg-secondary"
                     >
                       <div>
-                        <p className="font-medium">{alert.type}</p>
-                        <p className="text-sm text-muted-foreground">{alert.time}</p>
+                        <p className="font-medium">{alert.name}</p>
+                        <p className="text-sm text-muted-foreground">{new Date(alert.createdAt).toLocaleString()}</p>
                       </div>
                       <span className="text-sm font-medium text-success">{alert.status}</span>
                     </div>
                   ))}
+                  {!isLoading && alerts.length === 0 && <p className="text-sm text-muted-foreground">No alerts recorded yet.</p>}
                 </div>
               </CardContent>
             </Card>

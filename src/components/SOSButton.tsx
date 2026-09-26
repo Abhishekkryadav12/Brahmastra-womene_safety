@@ -74,15 +74,18 @@ const SOSButton = () => {
 
   const handleConfirmSOS = async () => {
     try {
+      const storedUser = localStorage.getItem("user");
+      const user = storedUser ? JSON.parse(storedUser) : null;
       const response = await fetch("/api/send-sos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: "Priya ",
+          name: user?.name || "Unknown user",
           location: "Malout",
           contacts: ["+919153422148"], 
+          userId: user?._id,
         }),
       });
 
