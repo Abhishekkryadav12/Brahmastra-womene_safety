@@ -41,7 +41,7 @@ const Dashboard = () => {
     { title: "Digital Safety", description: "Stay secure from cyber crimes", icon: Lock, route: "/digital-safety" },
     { title: "Travel Safety", description: "Track route and alert contacts", icon: Bus, route: "/travel-safety" },
     { title: "Mental Health", description: "Talk to counsellors anytime", icon: Smile, route: "/mental-health" },
-    { title: "Period & Hormonal Health", description: "Track cycles, health & mood", icon: Droplets, route: "/period-tracker" },
+
   ];
 
   const emergencyContacts = [

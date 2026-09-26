@@ -74,7 +74,7 @@ const SOSButton = () => {
 
   const handleConfirmSOS = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/send-sos", {
+      const response = await fetch("http://localhost:5001/api/send-sos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

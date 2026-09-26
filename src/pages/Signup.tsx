@@ -34,12 +34,30 @@ const Signup = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("userData", JSON.stringify(formData));
-    localStorage.setItem("isAuthenticated", "true");
-    toast.success("Account created successfully!");
-    navigate("/dashboard");
+    try {
+      const response = await fetch("http://localhost:5001/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("user", JSON.stringify(data));
+        toast.success("Account created successfully!");
+        navigate("/dashboard");
+      } else {
+        toast.error(data.message || "Signup failed");
+      }
+    } catch (error) {
+      toast.error("Error connecting to server");
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -14,15 +14,33 @@ const Login = () => {
     password: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple validation for demo
-    if (formData.emailOrMobile && formData.password) {
-      localStorage.setItem("isAuthenticated", "true");
-      toast.success("Login successful!");
-      navigate("/dashboard");
-    } else {
-      toast.error("Please fill in all fields");
+    if (!formData.emailOrMobile || !formData.password) {
+      return toast.error("Please fill in all fields");
+    }
+
+    try {
+      const response = await fetch("http://localhost:5001/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("user", JSON.stringify(data));
+        toast.success("Login successful!");
+        navigate("/dashboard");
+      } else {
+        toast.error(data.message || "Login failed");
+      }
+    } catch (error) {
+      toast.error("Error connecting to server");
     }
   };
 
