@@ -21,9 +21,9 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 // Twilio credentials from .env
-const accountSid = process.env.TWILIO_SID;
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioPhone = process.env.TWILIO_PHONE; // your Twilio number
+const twilioPhone = process.env.TWILIO_PHONE_NUMBER; // your Twilio number
 
 let client;
 try {
@@ -54,15 +54,20 @@ Please contact immediately!`;
       return res.json({ success: true, alertId: alert._id, status: alert.status, results: [] });
     }
 
-    // Send message to all emergency contacts
+    // Send message and voice call to all emergency contacts
     const results = await Promise.all(
-      contacts.map((contact) =>
+      contacts.flatMap((contact) => [
         client.messages.create({
           body: messageBody,
           from: twilioPhone,
           to: contact,
+        }),
+        client.calls.create({
+          twiml: `<Response><Say>SOS Alert! ${name} is in danger. Location is ${location || "Unknown"}. Please contact immediately!</Say></Response>`,
+          from: twilioPhone,
+          to: contact,
         })
-      )
+      ])
     );
 
     const alert = await Alert.create({ name: name.trim(), location, contacts, status: "sent", user: userId || null, providerMessageIds: results.map(({ sid }) => sid) });

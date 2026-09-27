@@ -84,7 +84,7 @@ const SOSButton = () => {
         body: JSON.stringify({
           name: user?.name || "Unknown user",
           location: "Malout",
-          contacts: ["+919153422148"], 
+          contacts: ["+918740852097"], 
           userId: user?._id,
         }),
       });
