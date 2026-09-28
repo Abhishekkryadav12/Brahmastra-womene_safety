@@ -49,8 +49,8 @@ app.post("/api/send-sos", async (req, res) => {
     // Set the requested demo location
     const locationStr = location && location !== "Unknown" ? location : "Malout, Punjab, India (DEMO LOCATION)";
 
-    // Custom emergency alert message
-    const messageBody = `🚨 EMERGENCY ALERT 🚨\n\nName: ${name}\n\nMessage: ${name} is in danger and needs immediate help.\n\nLocation: ${locationStr}\n\nTime: ${currentTime}\n\nPlease contact the person immediately.`;
+    // Using a predefined template to bypass Twilio India Trial restrictions
+    const messageBody = "sms_account_alerts";
 
     if (!client) {
       const alert = await Alert.create({ name: name.trim(), location, contacts, status: "simulated", user: userId || null });
