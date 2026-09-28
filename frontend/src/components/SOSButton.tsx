@@ -76,7 +76,7 @@ const SOSButton = () => {
     try {
       const storedUser = localStorage.getItem("user");
       const user = storedUser ? JSON.parse(storedUser) : null;
-      const response = await fetch("/api/send-sos", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/send-sos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
