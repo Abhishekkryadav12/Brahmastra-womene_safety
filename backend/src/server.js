@@ -53,23 +53,34 @@ app.post("/api/send-sos", async (req, res) => {
     }
 
     // Send message and voice call to all emergency contacts
-    const results = await Promise.all(
-      contacts.flatMap((contact) => [
-        client.messages.create({
+    const results = [];
+    for (const contact of contacts) {
+      console.log("Sending SOS to contact:", contact);
+      try {
+        const msg = await client.messages.create({
           body: messageBody,
           from: twilioPhone,
           to: contact,
-        }),
-        client.calls.create({
-          twiml: `<Response><Say>help she is in dangerous now</Say></Response>`,
+        });
+        results.push({ type: 'sms', sid: msg.sid, status: msg.status });
+      } catch (err) {
+        console.error(`SMS to ${contact} failed:`, err.message);
+      }
+
+      try {
+        const call = await client.calls.create({
+          url: 'http://twimlets.com/echo?Twiml=%3CResponse%3E%3CSay%3Ehelp%20she%20is%20in%20dangerous%20now%3C%2FSay%3E%3C%2FResponse%3E',
           from: twilioPhone,
           to: contact,
-        })
-      ])
-    );
+        });
+        results.push({ type: 'call', sid: call.sid, status: call.status });
+      } catch (err) {
+        console.error(`Call to ${contact} failed:`, err.message);
+      }
+    }
 
     const alert = await Alert.create({ name: name.trim(), location, contacts, status: "sent", user: userId || null, providerMessageIds: results.map(({ sid }) => sid) });
-    res.json({ success: true, alertId: alert._id, status: alert.status, results: results.map(({ sid, status }) => ({ sid, status })) });
+    res.json({ success: true, alertId: alert._id, status: alert.status, results });
   } catch (err) {
     console.error("SOS request failed:", err.message);
     res.status(500).json({ success: false, message: "Unable to process SOS request" });
