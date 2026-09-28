@@ -92,12 +92,12 @@ const SOSButton = () => {
       const data = await response.json();
 
       if (data.success) {
-        toast.error("🚨 SOS ACTIVATED! Emergency contacts notified!");
+        toast.success("SOS ACTIVATED! Emergency contacts notified!");
       } else {
-        toast.error("❌ Failed to send SOS message!");
+        toast.error("Failed to send SOS message!");
       }
     } catch (error) {
-      toast.error("⚠️ Error connecting to server");
+      toast.error("Error connecting to server");
     }
 
     setShowConfirmation(false);
