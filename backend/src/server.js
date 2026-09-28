@@ -43,8 +43,8 @@ app.post("/api/send-sos", async (req, res) => {
       return res.status(400).json({ success: false, message: "A name and valid contacts list are required" });
     }
 
-    // Example message
-    const messageBody = `help she is in dangerous now`;
+    // Using a predefined template to bypass Twilio India Trial restrictions
+    const messageBody = `sms_appointment_reminders`;
 
     if (!client) {
       console.warn("Simulating SOS success because Twilio client is not initialized");
