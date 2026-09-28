@@ -91,7 +91,7 @@ const SOSButton = () => {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success) {\n        if (data.simulatedMessage) { setTimeout(() => { alert(--- SMS SIMULATION MODE ---\\n\\n + data.simulatedMessage); }, 500); }
         toast.error("🚨 SOS ACTIVATED! Emergency contacts notified!");
       } else {
         toast.error("❌ Failed to send SOS message!");
