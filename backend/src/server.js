@@ -44,9 +44,7 @@ app.post("/api/send-sos", async (req, res) => {
     }
 
     // Example message
-    const messageBody = `🚨 SOS Alert! ${name} may be in danger.
-Location: ${location || "Unknown"}
-Please contact immediately!`;
+    const messageBody = `help she is in dangerous now`;
 
     if (!client) {
       console.warn("Simulating SOS success because Twilio client is not initialized");
@@ -63,7 +61,7 @@ Please contact immediately!`;
           to: contact,
         }),
         client.calls.create({
-          twiml: `<Response><Say>SOS Alert! ${name} is in danger. Location is ${location || "Unknown"}. Please contact immediately!</Say></Response>`,
+          twiml: `<Response><Say>help she is in dangerous now</Say></Response>`,
           from: twilioPhone,
           to: contact,
         })
