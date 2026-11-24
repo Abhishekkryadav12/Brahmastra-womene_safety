@@ -1,4 +1,8 @@
-![Brahmastra Women Safety Banner](banner.png)
+<p align="center">
+  <img src="./Brahmastra%20Women%20Safety%20Banner.png"
+       alt="Brahmastra Women Safety Banner"
+       width="100%">
+</p>
 
 # 🛡️ Brahmastra – Women Safety
 
